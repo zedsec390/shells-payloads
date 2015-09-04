@@ -8,7 +8,7 @@
 
 
 ####Signatures for the 3 files, signed by mainframe@bigendiansmalls.com (keybase: bigendiansmalls)
------BEGIN PGP SIGNATURE-----
+-----BEGIN PGP SIGNATURE----- 
 Comment: GPGTools - https://gpgtools.org
 
 iQEcBAABCgAGBQJV6ZvoAAoJEFm08ZUdCG4Yo+0IAJ5SPcvnc/gcTTK1N+JhJ9Je
@@ -18,9 +18,9 @@ YasSPdoG7Hesrhsr2TziGiGeQX/pljAHZfRvYdayotWyb4VgF31ypRvhkNehIwet
 MvhfFA50uGLUzoytDX4cWnDgM1W4ajCdhDWtzkSGuXYUwdmsHO7XtGcs3fkw3FaY
 tzbTS684iEAvuxEMMMcF+ZRbFwD8Nm13SspcrK/O5TmgL0wjD1sdngYCv5SWIJs=
 =vIts
------END PGP SIGNATURE-----
------BEGIN PGP SIGNATURE-----
-Comment: GPGTools - https://gpgtools.org
+ -----END PGP SIGNATURE-----
+ -----BEGIN PGP SIGNATURE-----
+ Comment: GPGTools - https://gpgtools.org
 
 iQEcBAABCgAGBQJV6Zv0AAoJEFm08ZUdCG4YNd8H/1uXLB9tlVNtnOGF7bNdsWEe
 H5UtGf5MYY2ktxvNS55AqMHGc0xAX0q3QKWvqziVE0UqleRt9oMOAFpq5jPHD932
@@ -29,9 +29,9 @@ agC623gJQcb/GMQnVfcTdTVZKA7bAu/mhJIA6NjIX9PMFUn+sraqpGaVqXCOaJMg
 rr0D9tD537YGjTbjwlkvz/iRz/+fKeB4rSX8UQZ5GqsC/t8s0eeB5/ZUMJIRU0FQ
 qszt8VaBz9fb2Z8EXW5s0EFfmk3a4XzcV3coTQ72mFtesZcX6zc5n4U3Qq9A8e4=
 =WymA
------END PGP SIGNATURE-----
------BEGIN PGP SIGNATURE-----
-Comment: GPGTools - https://gpgtools.org
+ -----END PGP SIGNATURE-----
+ -----BEGIN PGP SIGNATURE-----
+ Comment: GPGTools - https://gpgtools.org
 
 iQEcBAABCgAGBQJV6ZuwAAoJEFm08ZUdCG4YCVoH/i0WpfBp5SPoR7jNmeNJkA+c
 vGlhgzEczq31nkYD4U3sC9k0YvrcfvGql4cAeN2tzyfG6AspWdqHReeoOz99CH4C
@@ -40,4 +40,4 @@ DZWKuLxAhvgAL4PqXJLJz7KBIyy/j4Ct64CEvmwxVq9eDgJj4HRwm55fp7k79Z13
 rOQZT4ev2EUrvrmKNNp0dyTkLl5o4Oc82Q6+YZ1jfQ3J/3KuxfEKLN2G0Z1TagVB
 4OmlxsMc+xidcfEVYO8pkZmMkUcISpCRApdWahJnfZsDNNHOY2dGXUyb4bswu4Q=
 =zcfo
------END PGP SIGNATURE-----
+ -----END PGP SIGNATURE-----
