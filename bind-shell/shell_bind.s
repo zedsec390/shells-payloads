@@ -557,9 +557,9 @@ EXITPLA  DC    F'0'               # exit rout parm list addr
 **************************
 * Socket read/write vars *
 **************************
-CLIREAD  DC    A(L'@CBUF)         # one less than buf
+CLIREAD  DC    F'52'              # one less than buf
 CLIBUF   DC    A(@CBUF)           # buff for read cli sock
-@CBUF    DC    52XL1'22'
+@CBUF    DC    XL52'22'           # buffer for bytes read
 BREAD    DC    F'0'               # bytes read
 BWRIT    DC    F'0'               # bytes written
 *********************
