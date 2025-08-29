@@ -11,6 +11,7 @@ BIN := ./bin
 
 # for modified elevated shell
 MSLDOPTS := -b "AC=1" -S "//'SYS1.CSSLIB'"
+ASOPTS := --NODECK,OBJECT
 MSMOD := racr
 MSBIN := ${BIN}/${MSMOD}
 MSOBJ := ${SRC}/${MSMOD}.o
@@ -27,7 +28,7 @@ all: clean modwshl
 	@rm -f ${MSOBJ}
 
 modwshl:
-	@${AS} -o ${MSOBJ} ${MSSRC}
+	@${AS} ${ASOPT} -o ${MSOBJ} ${MSSRC}
 	@${LD} ${MSLDOPTS} -o ${MSBIN} ${MSOBJ}
 	@${EXT} ${EXTA} ${MSBIN}
 
